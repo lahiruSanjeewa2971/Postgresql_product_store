@@ -4,7 +4,7 @@ export const getAllProducts = async (req, res) => {
   try {
     const products = await sql`
             SELECT * FROM products
-            ORDER BY created_at DESC
+            ORDER BY create_at DESC
         `;
 
     res.status(200).json({ success: true, data: products });
@@ -18,7 +18,7 @@ export const getProduct = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const product = sql`
+    const product = await sql`
         SELECT * FROM products WHERE id=${id}
     `;
 
@@ -31,7 +31,7 @@ export const getProduct = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   const { name, price, image } = req.body;
-  if (name || !price || !image) {
+  if (!name || !price || !image) {
     return res
       .status(400)
       .json({ success: false, message: "All fields are required." });
@@ -54,7 +54,7 @@ export const updateProduct = async (req, res) => {
   const { name, price, image } = req.body;
 
   try {
-    const updatedProduct = sql`
+    const updatedProduct = await sql`
         UPDATE products SET name=${name}, price=${price}, image=${image} WHERE id=${id} RETURNING *
     `;
 
@@ -71,4 +71,20 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-export const deleteProduct = async (req, res) => {};
+export const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedProduct = await sql`
+        DELETE FROM products WHERE id=${id} RETURNING *
+    `;
+
+    if (deleteProduct.length === 0) {
+      res.status(404).json({ success: false, message: "Product not found." });
+    }
+
+    res.status(200).json({ success: true, data: deleteProduct[0] });
+  } catch (error) {
+    console.log("error in deleting a product :", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
